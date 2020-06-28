@@ -1,0 +1,4 @@
+factorizer: alswr
+nbfeatures: 8
+lambda: 0.03
+nbiterations: 25
