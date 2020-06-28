@@ -69,6 +69,8 @@ public class Evaluator {
 				cfgFileName = line.getOptionValue("config");
 			}
 		} catch (ParseException exp) {
+			exp.printStackTrace();
+			System.exit(1);
 		}
 
 		/* Load configuration file */
@@ -80,7 +82,7 @@ public class Evaluator {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			logger.error("Couldn't read main configuration file");
-			return;
+			System.exit(1);
 		}
 
 		logger.info("=== MAIN CONFIGURATION ===");
@@ -89,7 +91,7 @@ public class Evaluator {
 		/* Load dataset */
 		logger.info("Loading dataset");
 
-		Grade g;
+		Grade g = null;;
 
 		ArrayList<String> games = new ArrayList<>();
 
@@ -126,10 +128,11 @@ public class Evaluator {
 			} catch (InterruptedException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
+				System.exit(1);
 			}
 
 			TableResult result;
-			TableResult gamesTable;
+			TableResult gamesTable = null;
 			try {
 
 				result = queryJob.getQueryResults();
@@ -138,11 +141,11 @@ public class Evaluator {
 			} catch (JobException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-				return;
+				System.exit(1);
 			} catch (InterruptedException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
-				return;
+				System.exit(1);
 			}
 
 			for (FieldValueList row : gamesTable.iterateAll()) {
@@ -152,7 +155,7 @@ public class Evaluator {
 			g = new Grade(cfg.getDataset(), true);
 		} else {
 			logger.error("Data config is not set local or online");
-			return;
+			System.exit(1);
 		}
 
 		DataModel model = null;
@@ -165,7 +168,7 @@ public class Evaluator {
 			} catch (TasteException e) {
 				e.printStackTrace();
 				logger.error("Couldn't normalize dataset");
-				return;
+				System.exit(1);
 			}
 		}
 		if (cfg.getBinarize()) {
@@ -175,7 +178,7 @@ public class Evaluator {
 			} catch (TasteException e) {
 				e.printStackTrace();
 				logger.error("Couldn't binarize dataset");
-				return;
+				System.exit(1);
 			}
 		}
 		logger.info("Done with dataset");
@@ -213,12 +216,12 @@ public class Evaluator {
 						c = yml.loadAs(in, BCNConfig.class);
 					} else {
 						logger.error("Unrecognized algorithm");
-						return;
+						System.exit(1);
 					}
 				} catch (Exception ex) {
 					ex.printStackTrace();
 					logger.error("Couldn't read specific configuration file {}", s);
-					return;
+					System.exit(1);
 				}
 			}
 			configs.put(s, c);
@@ -287,6 +290,7 @@ public class Evaluator {
 			} else if (index != 0) {
 				f = new FileWriter("result" + fileNb + "_" + nbFile + ".json");
 			} else {
+				System.exit(1);
 				return;
 			}
 			f.write(users.toJSONString());
@@ -298,8 +302,10 @@ public class Evaluator {
 		} catch (TasteException e) {
 			e.printStackTrace();
 			logger.error("Error during recommendations");
-			return;
+			System.exit(1);
 		}
+
+		System.exit(0);
 
 	}
 
