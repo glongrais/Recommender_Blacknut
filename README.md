@@ -11,7 +11,7 @@ Edit `RECOMMENDER_BLACKNUT/recommender/app/src/main/ressources/default_config.ym
 Or create a new config file and in `RECOMMENDER_BLACKNUT/recommender/app/run.sh` uncomment `--config="$CONFIG` and indicate the path in `CONFIG="..."`
 
 ## The config file : 
-```
+```java
 data: local /* local | online */
 dataset: src/main/resources/streams.csv /* if data is set to local, this indicate the path where to collect the datas */
 resultPath: result.json /* the path and the name of the result file */
