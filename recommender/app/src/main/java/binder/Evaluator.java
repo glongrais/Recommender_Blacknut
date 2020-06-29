@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
 import org.yaml.snakeyaml.Yaml;
@@ -54,6 +57,14 @@ public class Evaluator {
 
 	final static String prefix = "src/main/resources/";
 	private static Logger logger = LoggerFactory.getLogger(Evaluator.class);
+	static Config cfg = null;
+	static int index = 0;
+	static Grade g = null;
+	static JSONArray users;
+	static HashMap<String, AbstractConfig> configs;
+	static DataModel model = null;
+	static ArrayList<String> games = new ArrayList<>();
+	static long id;
 
 	public static void main(String[] args) throws IOException {
 
@@ -75,7 +86,6 @@ public class Evaluator {
 
 		/* Load configuration file */
 		logger.info("Using {} as configuration file", cfgFileName);
-		Config cfg = null;
 		Yaml yaml = new Yaml();
 		try (InputStream in = Files.newInputStream(Paths.get(cfgFileName))) {
 			cfg = yaml.loadAs(in, Config.class);
@@ -85,7 +95,7 @@ public class Evaluator {
 			System.exit(1);
 		}
 
-		if(cfg.getNbUserPerFile() < 0){
+		if (cfg.getNbUserPerFile() < 0) {
 			logger.error("The number of users per file can't be negative");
 			System.exit(1);
 		}
@@ -95,10 +105,6 @@ public class Evaluator {
 
 		/* Load dataset */
 		logger.info("Loading dataset");
-
-		Grade g = null;;
-
-		ArrayList<String> games = new ArrayList<>();
 
 		if (cfg.getData().equals("online")) {
 
@@ -118,8 +124,8 @@ public class Evaluator {
 
 			QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder("SELECT * from external_share.streams")
 					.setUseLegacySql(false).build();
-			QueryJobConfiguration queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
-					.setUseLegacySql(false).build();
+			QueryJobConfiguration queryConfigGames = QueryJobConfiguration
+					.newBuilder("SELECT * from external_share.games").setUseLegacySql(false).build();
 
 			JobId jobId = JobId.of(UUID.randomUUID().toString());
 			JobId jobIdGames = JobId.of(UUID.randomUUID().toString());
@@ -163,7 +169,6 @@ public class Evaluator {
 			System.exit(1);
 		}
 
-		DataModel model = null;
 		model = g.NumberOfSession();
 
 		if (cfg.getNormalize()) {
@@ -189,7 +194,7 @@ public class Evaluator {
 		logger.info("Done with dataset");
 
 		/* Read configuration files of all recommender algorithms specified */
-		HashMap<String, AbstractConfig> configs = new HashMap<String, AbstractConfig>(cfg.getConfigs().size());
+		configs = new HashMap<String, AbstractConfig>(cfg.getConfigs().size());
 		for (String s : cfg.getConfigs()) {
 			AbstractConfig c = null;
 			Yaml yml = new Yaml();
@@ -234,19 +239,20 @@ public class Evaluator {
 		try {
 			logger.info("Starting recommendations");
 
-			JSONArray users = new JSONArray();
+			users = new JSONArray();
 			FileWriter f;
 			LongPrimitiveIterator it_user = model.getUserIDs();
 			int numUser = model.getNumUsers();
 			int nbFile = 0;
-			if(cfg.getNbUserPerFile() != 0){
-				nbFile = numUser/cfg.getNbUserPerFile() + 1;
+			if (cfg.getNbUserPerFile() != 0) {
+				nbFile = numUser / cfg.getNbUserPerFile() + 1;
 			}
 			int fileNb = 1;
-			int index = 0;
+
+			ExecutorService service = Executors.newFixedThreadPool(4);
 
 			while (it_user.hasNext()) {
-				long id = it_user.next();
+				id = it_user.next();
 
 				if (cfg.getNbUserPerFile() > 0 && cfg.getNbUserPerFile() == index) {
 					String str = cfg.getResultPath();
@@ -256,40 +262,60 @@ public class Evaluator {
 					f.close();
 					users = new JSONArray();
 					fileNb++;
-					index=0;
+					index = 0;
 				}
 
-				JSONObject user = new JSONObject();
-				user.put("user_id", g.getOldUserId((int) id));
-				Iterator<Entry<String, AbstractConfig>> it = configs.entrySet().iterator();
-				while (it.hasNext()) {
-					Entry<String, AbstractConfig> pair = it.next();
-					AbstractConfig c = (AbstractConfig) pair.getValue();
-					// c.logConfig(logcfg);
-					String name = pair.getKey();
+				service.submit(new Runnable() {
+					public void run() {
 
-					RecommenderBuilder builder = new BinderRecommenderBuilder(c, 3.0f);
-					List<RecommendedItem> itemRecommendations = builder.buildRecommender(model).recommend(id,
-							cfg.getNbRecommendation());
-					JsonArray reco = new JsonArray();
-					for (RecommendedItem itemRecommendation : itemRecommendations) {
-						String idGame = g.getOldGameId((int) itemRecommendation.getItemID());
-						if(cfg.getData().equals("local") || games.contains(idGame)){
-							reco.add(idGame);
+						JSONObject user = new JSONObject();
+						user.put("user_id", g.getOldUserId((int) id));
+						Iterator<Entry<String, AbstractConfig>> it = configs.entrySet().iterator();
+						while (it.hasNext()) {
+							Entry<String, AbstractConfig> pair = it.next();
+							AbstractConfig c = (AbstractConfig) pair.getValue();
+							// c.logConfig(logcfg);
+							String name = pair.getKey();
+
+							RecommenderBuilder builder = new BinderRecommenderBuilder(c, 3.0f);
+							List<RecommendedItem> itemRecommendations = null;
+							try {
+								itemRecommendations = builder.buildRecommender(model).recommend(id,
+										cfg.getNbRecommendation());
+							} catch (TasteException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+								System.exit(1);
+							}
+							JsonArray reco = new JsonArray();
+							for (RecommendedItem itemRecommendation : itemRecommendations) {
+								String idGame = g.getOldGameId((int) itemRecommendation.getItemID());
+								if (cfg.getData().equals("local") || games.contains(idGame)) {
+									reco.add(idGame);
+								}
+							}
+
+							user.put(name, reco);
 						}
+						Random rand = new Random();
+						if (rand.nextInt() < 0.5) {
+							user.put("display", "mf/config79.yml");
+						} else {
+							user.put("display", "ibknn/config0.yml");
+						}
+						users.add(user);
+						index++;
 					}
+				});
 
-					user.put(name, reco);
-				}
-				Random rand = new Random();
-				if (rand.nextInt() < 0.5) {
-					user.put("display", "mf/config79.yml");
-				} else {
-					user.put("display", "ibknn/config0.yml");
-				}
-				users.add(user);
-				index++;
-
+			}
+			service.shutdown();
+			try {
+				service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.exit(1);
 			}
 			if (cfg.getNbUserPerFile() == 0) {
 				f = new FileWriter(cfg.getResultPath());
