@@ -85,6 +85,11 @@ public class Evaluator {
 			System.exit(1);
 		}
 
+		if(cfg.getNbUserPerFile() < 0){
+			logger.error("The number of users per file can't be negative");
+			System.exit(1);
+		}
+
 		logger.info("=== MAIN CONFIGURATION ===");
 		cfg.logConfig(logger);
 
@@ -244,7 +249,8 @@ public class Evaluator {
 				long id = it_user.next();
 
 				if (cfg.getNbUserPerFile() > 0 && cfg.getNbUserPerFile() == index) {
-					f = new FileWriter("result" + fileNb + "_" + nbFile + ".json");
+					String str = cfg.getResultPath();
+					f = new FileWriter(str.substring(0, str.length() - 5) + fileNb + "_" + nbFile + ".json");
 					f.write(users.toJSONString());
 					f.flush();
 					f.close();

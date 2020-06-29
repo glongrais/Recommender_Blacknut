@@ -28,5 +28,5 @@
 *.vrb
 blacknut-analytics-7488e0e6d73d.json
 streams.csv
-result.json
 .vscode/
+result/

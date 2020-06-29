@@ -1,14 +1,14 @@
-data: local
+data: online
 dataset: src/main/resources/streams.csv
-resultPath: result.json
+resultPath: result/result.json
 keyPath: blacknut-analytics-7488e0e6d73d.json
-nbUserPerFile: 0
+nbUserPerFile: 1000
 nbRecommendation: 5
 configs:
-- mf/config79.yml
+#- mf/config79.yml
 - ibknn/config0.yml
 - ibknn/config2.yml
-- itemavg
-- itemuseravg
+#- itemavg
+#- itemuseravg
 normalize: false
 binarize: false
