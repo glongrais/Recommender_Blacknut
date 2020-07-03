@@ -27,7 +27,7 @@ binarize: false                               /* binarize the data */
 
 ## Sources : 
 
-This project use the modifed version of Apache Mahout™ made by Florestan De Moor : 
+This project use the modifed version of Apache Mahout™ by Florestan De Moor : 
 [`https://github.com/fdemoor/mahout/tree/branch-0.13.0`](https://github.com/fdemoor/mahout/tree/branch-0.13.0)
 
 For additional information about Mahout, visit the [Mahout Home Page](http://mahout.apache.org/)
