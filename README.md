@@ -32,13 +32,13 @@ The application will return the results as one or more JSON files. The results w
 [
     {
         "user_id": "1",
-        "display": "algo1",
-        "algo1": [
+        "display": "[name of algo 1]",
+        "[name of algo 1]": [
             "4",
             "24",
             "5"
         ],
-        "algo2": [
+        "[name of algo 2]": [
             "12",
             "4",
             "5"
@@ -46,13 +46,13 @@ The application will return the results as one or more JSON files. The results w
     },
     {
         "user_id": "2",
-        "display": "algo2",
-        "algo1": [
+        "display": "[name of algo 2]",
+        "[name of algo 1]": [
             "7",
             "4",
             "45"
         ],
-        "algo2": [
+        "[name of algo 2]": [
             "21",
             "9",
             "7"
