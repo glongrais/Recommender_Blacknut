@@ -1,10 +1,10 @@
 # RECOMMENDER BLACKNUT
 
 ## To compile the recommender :
-Launch `RECOMMENDER_BLACKNUT/recommender/script/binder.sh compile`
+Run `RECOMMENDER_BLACKNUT/recommender/script/binder.sh compile`
 
 ## To run the recommender :
-Launch `RECOMMENDER_BLACKNUT/recommender/script/binder.sh run`
+Run `RECOMMENDER_BLACKNUT/recommender/script/binder.sh run`
 
 ## To change the setting of the recommender : 
 Edit `RECOMMENDER_BLACKNUT/recommender/app/src/main/ressources/default_config.yml`  
