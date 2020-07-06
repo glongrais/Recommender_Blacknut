@@ -25,6 +25,30 @@ normalize: false                              /* normalize the data */
 binarize: false                               /* binarize the data */
 ```
 
+## Results :
+
+The application will return the results as one or more JSON files. The results will be stored with this structure : 
+```json
+[
+    {
+        "user_id": "1",
+        "display": "algo1",
+        "algo1": [
+            "4",
+            "24",
+            "5"
+        ],
+        "algo2": [
+            "12",
+            "4",
+            "5"
+        ]
+    },
+    
+    ...
+    
+]
+```
 ## Sources : 
 
 This project use the modifed version of Apache Mahout™ by Florestan De Moor : 
