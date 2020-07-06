@@ -44,9 +44,20 @@ The application will return the results as one or more JSON files. The results w
             "5"
         ]
     },
-    
-    ...
-    
+    {
+        "user_id": "2",
+        "display": "algo2",
+        "algo1": [
+            "7",
+            "4",
+            "45"
+        ],
+        "algo2": [
+            "21",
+            "9",
+            "7"
+        ]
+    },
 ]
 ```
 ## Sources : 
