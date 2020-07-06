@@ -1,4 +1,7 @@
 /*
+
+    Copyright 2020 Guillaume Longrais
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -17,11 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
-public class IdConvertion {
+public class IdConversion {
     HashMap<String, Integer> IdUser;
     HashMap<String, Integer> IdGame;
 
-    public IdConvertion(){
+    public IdConversion(){
         IdUser = new HashMap<>();
         IdGame = new HashMap<>();
     }

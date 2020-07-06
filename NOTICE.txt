@@ -1,0 +1,7 @@
+===============================================================================================
+ Binder Recommender
+ Copyright 2020 and onwards Florestan De Moor & Guillaume Longrais & Robinson Sablons De Gelis
+===============================================================================================
+
+This product includes software developed by Florestan De Moor, mentioned in this report :
+https://hal.inria.fr/hal-02369708/document

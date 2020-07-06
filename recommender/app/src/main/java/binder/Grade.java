@@ -1,4 +1,6 @@
 /*
+    Copyright 2020 Guillaume Longrais & Robinson Sablon De Gelis
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -47,14 +49,14 @@ public class Grade {
 
     HashMap<String, HashMap<String, ArrayList<Integer>>> data;
 
-    IdConvertion IdConvert;
+    IdConversion IdConvert;
 
     public Grade(String path, Boolean header) {
         try {
             this.br = new BufferedReader(new FileReader(path));
             this.header = header;
             this.data = readData();
-            this.IdConvert = new IdConvertion();
+            this.IdConvert = new IdConversion();
             this.IdConvert.fillTables(this.data);
 
         } catch (IOException e) {
@@ -107,7 +109,7 @@ public class Grade {
         }
         this.data = userMap;
 
-        this.IdConvert = new IdConvertion();
+        this.IdConvert = new IdConversion();
         this.IdConvert.fillTables(this.data);
 
     }
