@@ -9,7 +9,6 @@ binder/config/MFConfig.class
 binder/BinderRecommenderBuilder.class
 binder/config/COCLUSTRConfig.class
 binder/COCLUSTRecommenderBuilder.class
-binder/Evaluator$TimeFunc.class
 binder/config/BBCFConfig.class
 binder/config/Config.class
 binder/config/COCLUSTConfig.class

@@ -21,11 +21,16 @@ import binder.config.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -45,6 +50,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -68,7 +74,7 @@ import java.util.UUID;
 
 public class Evaluator {
 
-	final static String prefix = "src/main/resources/";
+	static String prefix = "src/main/resources/";
 	private static Logger logger = LoggerFactory.getLogger(Evaluator.class);
 
 	public static void main(String[] args) throws IOException {
@@ -110,6 +116,7 @@ public class Evaluator {
 		cfg.logConfig(logger);
 
 		/* Load dataset */
+
 		logger.info("Loading dataset");
 
 		Grade g = null;;
@@ -129,6 +136,7 @@ public class Evaluator {
 			}
 
 			// Instantiate a client.
+
 			BigQuery bigquery = BigQueryOptions.newBuilder().setCredentials(credentials).setProjectId(projectId).build()
 					.getService();
 
@@ -143,11 +151,11 @@ public class Evaluator {
 			Job queryJobGames = bigquery.create(JobInfo.newBuilder(queryConfigGames).setJobId(jobIdGames).build());
 
 			// Wait for the query to complete.
+
 			try {
 				queryJob = queryJob.waitFor();
 				queryJobGames = queryJobGames.waitFor();
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				System.exit(1);
 			}
@@ -160,11 +168,9 @@ public class Evaluator {
 				gamesTable = queryJobGames.getQueryResults();
 				g = new Grade(result);
 			} catch (JobException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				System.exit(1);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				System.exit(1);
 			}
@@ -205,6 +211,7 @@ public class Evaluator {
 		logger.info("Done with dataset");
 
 		/* Read configuration files of all recommender algorithms specified */
+
 		HashMap<String, AbstractConfig> configs = new HashMap<String, AbstractConfig>(cfg.getConfigs().size());
 		for (String s : cfg.getConfigs()) {
 			AbstractConfig c = null;
@@ -247,6 +254,66 @@ public class Evaluator {
 			}
 			configs.put(s, c);
 		}
+
+		/* Read configuration files of all tests specified */
+
+		JSONParser jsonParser = new JSONParser();
+		JSONObject currentTest = null;
+         
+        try (FileReader reader = new FileReader(cfg.getTestPath()))
+        {
+            //Read JSON file
+			Object obj = jsonParser.parse(reader);
+			DateFormat format = new SimpleDateFormat("dd_MM_yyyy");
+
+			Date today = new Date();
+			Date tmpDate = null;
+ 
+			String endDateString = (String) ((JSONObject)obj).get("end_date");
+			Date endDate = format.parse(endDateString);
+
+			if(today.after(endDate)){
+				logger.error("Test period completed : {}", endDate);
+				System.exit(1);
+			}
+
+			JSONArray tests = (JSONArray) ((JSONObject)obj).get("tests");
+
+			for(Object test : tests){
+				Date d = format.parse((String) ((JSONObject)test).get("start_date"));
+				if(tmpDate == null){
+					tmpDate = d;
+					currentTest = (JSONObject) test;
+				}
+
+				if(d.compareTo(tmpDate) > 0 && d.compareTo(today) <= 0){
+					tmpDate = d;
+					currentTest = (JSONObject) test;
+				}
+			}
+
+			if(tmpDate == null || tmpDate.after(today)){
+				logger.error("No tests to do today : {}", today);
+				System.exit(1);
+			}
+             
+ 
+        } catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.exit(1);
+        } catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+        }  catch (org.json.simple.parser.ParseException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (java.text.ParseException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		/* Recommendations */
+
 		try {
 			logger.info("Starting recommendations");
 
@@ -297,12 +364,14 @@ public class Evaluator {
 
 					user.put(name, reco);
 				}
+				JSONArray algos = (JSONArray) currentTest.get("algos");
+				
 				Random rand = new Random();
-				if (rand.nextInt() < 0.5) {
-					user.put("display", "mf/config79.yml");
-				} else {
-					user.put("display", "ibknn/config0.yml");
-				}
+				int i = rand.nextInt(algos.size());
+
+				user.put("display", (String) algos.get(i));
+
+				user.put("test_id", currentTest.get("id"));
 				users.add(user);
 				index++;
 

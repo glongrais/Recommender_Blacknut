@@ -25,6 +25,7 @@ public class Config implements AbstractConfig {
 	private String dataset; /* Path to the dataset file */
 	private String resultPath;
 	private String keyPath;
+	private String testPath;
 	private int nbUserPerFile;
 	private int nbRecommendation;
 	private List<String> configs;
@@ -54,6 +55,14 @@ public class Config implements AbstractConfig {
 
 	public String getKeyPath() {
 		return this.keyPath;
+	}
+
+	public void setTestPath(String s) {
+		this.testPath = s;
+	}
+
+	public String getTestPath() {
+		return this.testPath;
 	}
 
 	public void setNbUserPerFile(int n) {

@@ -1,4 +1,5 @@
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/Evaluator.java
+/Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/IdConversion.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/BCNConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/COCLUSTRecommenderBuilder.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/ItemAvgConfig.java
@@ -10,7 +11,6 @@
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/BinderRecommenderBuilder.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/ItemUserAvgConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/Grade.java
-/Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/IdConvertion.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/BicaiNetConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/COCLUSTRConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/UBKNNConfig.java
