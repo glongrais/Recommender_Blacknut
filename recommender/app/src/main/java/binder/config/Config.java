@@ -120,6 +120,7 @@ public class Config implements AbstractConfig {
 		logger.info("Dataset path: {}", this.dataset);
 		logger.info("Result path: {}", this.resultPath);
 		logger.info("Key path: {}", this.keyPath);
+		logger.info("Tests path: {}", this.testPath);
 		logger.info("Number of recommendations: {}", this.nbRecommendation);
 		logger.info("Number of users per file: {}", this.nbUserPerFile);
 		logger.info("List of the configuration files of recommender algorithms to run: {}", this.configs.toString());
