@@ -443,6 +443,10 @@ public class Grade {
         return IdConvert.getOriginalUserId(id);
     }
 
+    public Set<String> getAllOldUserId(){
+        return IdConvert.getAllOriginalUserId();
+    }
+
     private HashMap<String, HashMap<String, ArrayList<Integer>>> readData() throws IOException {
         HashMap<String, HashMap<String, ArrayList<Integer>>> userMap = new HashMap<>();
 

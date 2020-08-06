@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -259,6 +260,7 @@ public class Evaluator {
 
 		JSONParser jsonParser = new JSONParser();
 		JSONObject currentTest = null;
+		Boolean everyday_refresh = null;
          
         try (FileReader reader = new FileReader(cfg.getTestPath()))
         {
@@ -312,6 +314,25 @@ public class Evaluator {
 			System.exit(1);
 		}
 
+		// Assigning algo to display to every users
+
+		everyday_refresh =(Boolean) currentTest.get("everyday_refresh");
+
+		JSONArray algos = (JSONArray) currentTest.get("algos");
+		HashMap<String, Integer> algoUsers = new HashMap<>();
+
+		if(everyday_refresh){
+			Random rand = new Random();
+			
+			for(String user : g.getAllOldUserId()){
+				int i = rand.nextInt(algos.size());
+				algoUsers.put(user, i);
+				setAlgoUsers(algoUsers, ((String)currentTest.get("id"))+"_"+((String)currentTest.get("start_date")));
+			}
+		}else{
+			algoUsers = getAlgoUsers(((String)currentTest.get("id"))+"_"+((String)currentTest.get("start_date")), g.getAllOldUserId(), algos.size());
+		}
+
 		/* Recommendations */
 
 		try {
@@ -322,8 +343,8 @@ public class Evaluator {
 			LongPrimitiveIterator it_user = model.getUserIDs();
 			int numUser = model.getNumUsers();
 			int nbFile = 0;
-			if(cfg.getNbUserPerFile() != 0){
-				nbFile = numUser/cfg.getNbUserPerFile() + 1;
+			if (cfg.getNbUserPerFile() != 0) {
+				nbFile = numUser / cfg.getNbUserPerFile() + 1;
 			}
 			int fileNb = 1;
 			int index = 0;
@@ -339,7 +360,7 @@ public class Evaluator {
 					f.close();
 					users = new JSONArray();
 					fileNb++;
-					index=0;
+					index = 0;
 				}
 
 				JSONObject user = new JSONObject();
@@ -357,19 +378,15 @@ public class Evaluator {
 					JsonArray reco = new JsonArray();
 					for (RecommendedItem itemRecommendation : itemRecommendations) {
 						String idGame = g.getOldGameId((int) itemRecommendation.getItemID());
-						if(cfg.getData().equals("local") || games.contains(idGame)){
+						if (cfg.getData().equals("local") || games.contains(idGame)) {
 							reco.add(idGame);
 						}
 					}
 
 					user.put(name, reco);
 				}
-				JSONArray algos = (JSONArray) currentTest.get("algos");
-				
-				Random rand = new Random();
-				int i = rand.nextInt(algos.size());
 
-				user.put("display", (String) algos.get(i));
+				user.put("display", algos.get(algoUsers.get(g.getOldUserId((int) id))));
 
 				user.put("test_id", currentTest.get("id"));
 				users.add(user);
@@ -398,6 +415,41 @@ public class Evaluator {
 
 		System.exit(0);
 
+	}
+
+	private static HashMap<String, Integer> getAlgoUsers(String s, Set<String> users, int nbAlgos)
+			throws FileNotFoundException {
+		JSONParser jsonParser = new JSONParser();
+
+		HashMap<String, Integer> result = new HashMap<>();
+		try (FileReader reader = new FileReader(s)){
+			Object obj = jsonParser.parse(reader);
+			
+			for(String user : users){
+				if(((JSONObject)obj).containsKey(user)){
+					result.put(user, (int)((JSONObject)obj).get(user));
+				}else{
+					Random rand = new Random();
+					int i = rand.nextInt(nbAlgos);
+					result.put(user, i);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (org.json.simple.parser.ParseException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		return result;
+	}
+
+	private static void setAlgoUsers(HashMap<String, Integer> algoUsers, String name) throws IOException {
+		JSONObject result = new JSONObject(algoUsers);
+		FileWriter f = new FileWriter(name);
+		f.write(result.toJSONString());
+		f.flush();
+		f.close();
 	}
 
 }

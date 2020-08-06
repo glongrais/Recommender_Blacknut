@@ -74,6 +74,10 @@ public class IdConversion {
         return IdGame.keySet();
     }
 
+    public Set<String> getAllOriginalUserId(){
+        return IdUser.keySet();
+    }
+
     public int getNewGameId(String id){
         return IdGame.get(id);
     }
