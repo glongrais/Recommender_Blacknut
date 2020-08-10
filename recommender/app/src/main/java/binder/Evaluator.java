@@ -145,29 +145,37 @@ public class Evaluator {
 					.setUseLegacySql(false).build();
 			QueryJobConfiguration queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
 					.setUseLegacySql(false).build();
+					QueryJobConfiguration queryConfigClick = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
+					.setUseLegacySql(false).build();
 
 			JobId jobId = JobId.of(UUID.randomUUID().toString());
 			JobId jobIdGames = JobId.of(UUID.randomUUID().toString());
+			JobId jobIdClick = JobId.of(UUID.randomUUID().toString());
 			Job queryJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 			Job queryJobGames = bigquery.create(JobInfo.newBuilder(queryConfigGames).setJobId(jobIdGames).build());
+			Job queryJobClick = bigquery.create(JobInfo.newBuilder(queryConfigClick).setJobId(jobIdClick).build());
 
 			// Wait for the query to complete.
 
 			try {
 				queryJob = queryJob.waitFor();
 				queryJobGames = queryJobGames.waitFor();
+				queryJobClick = queryJobClick.waitFor();
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 				System.exit(1);
 			}
 
-			TableResult result;
+			TableResult result = null;
 			TableResult gamesTable = null;
+			TableResult clickTable = null;
 			try {
 
 				result = queryJob.getQueryResults();
 				gamesTable = queryJobGames.getQueryResults();
+				clickTable = queryJobClick.getQueryResults();
 				g = new Grade(result);
+				ABStats.ABTestStat(clickTable);
 			} catch (JobException e1) {
 				e1.printStackTrace();
 				System.exit(1);
