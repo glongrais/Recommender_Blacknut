@@ -8,6 +8,10 @@ function execute_command() {
       echo "Running..."
       (cd $eval_dir && ./run.sh)
       ;;
+    check)
+      echo "Running..."
+      (cd $eval_dir && ./check.sh)
+      ;;
     compile)
       echo "Compiling..."
       (cd $eval_dir && mvn package)

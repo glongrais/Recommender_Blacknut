@@ -1,9 +1,9 @@
-data: local
+data: online
 dataset: src/main/resources/streams.csv
 resultPath: result/result.json
 keyPath: blacknut-analytics-7488e0e6d73d.json
 testPath: tests.json
-nbUserPerFile: 10
+nbUserPerFile: 1000
 nbRecommendation: 5
 configs:
 - mf/config79.yml

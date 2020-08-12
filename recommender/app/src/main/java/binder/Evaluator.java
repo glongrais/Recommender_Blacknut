@@ -81,15 +81,20 @@ public class Evaluator {
 	public static void main(String[] args) throws IOException {
 
 		String cfgFileName = prefix + "default_config.yml";
+		Boolean checkMode = false;
 
 		/* Check command line arguments */
 		CommandLineParser parser = new DefaultParser();
 		Options options = new Options();
-		options.addOption("c", "config", true, "path of config file, otherwise default used");
+		options.addOption("c", "config", true, "Path of config file, otherwise default used");
+		options.addOption("ch", "check", false, "Run the app in check mode without the recommendations");
 		try {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("config")) {
 				cfgFileName = line.getOptionValue("config");
+			}
+			if(line.hasOption("check")){
+				checkMode = true;
 			}
 		} catch (ParseException exp) {
 			exp.printStackTrace();
@@ -324,7 +329,7 @@ public class Evaluator {
 
 		// Assigning algo to display to every users
 
-		everyday_refresh =(Boolean) currentTest.get("everyday_refresh");
+		everyday_refresh = (Boolean) currentTest.get("everyday_refresh");
 
 		JSONArray algos = (JSONArray) currentTest.get("algos");
 		HashMap<String, Integer> algoUsers = new HashMap<>();
@@ -334,11 +339,11 @@ public class Evaluator {
 			
 			for(String user : g.getAllOldUserId()){
 				int i = rand.nextInt(algos.size());
-				algoUsers.put(user, i);
-				setAlgoUsers(algoUsers, ((String)currentTest.get("id"))+"_"+((String)currentTest.get("start_date")));
+				algoUsers.put(user, i);	
 			}
+			setAlgoUsers(algoUsers, ((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json");
 		}else{
-			algoUsers = getAlgoUsers(((String)currentTest.get("id"))+"_"+((String)currentTest.get("start_date")), g.getAllOldUserId(), algos.size());
+			algoUsers = getAlgoUsers(((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json", g.getAllOldUserId(), algos.size());
 		}
 
 		/* Recommendations */
@@ -357,7 +362,7 @@ public class Evaluator {
 			int fileNb = 1;
 			int index = 0;
 
-			while (it_user.hasNext()) {
+			while (it_user.hasNext() && !checkMode) {
 				long id = it_user.next();
 
 				if (cfg.getNbUserPerFile() > 0 && cfg.getNbUserPerFile() == index) {

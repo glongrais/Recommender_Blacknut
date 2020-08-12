@@ -6,6 +6,7 @@
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/NBCFConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/MFConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/AbstractConfig.java
+/Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/ABStats.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/IBKNNConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/config/BBCFConfig.java
 /Users/guillaume/Documents/Recommender_Blacknut/recommender/app/src/main/java/binder/BinderRecommenderBuilder.java

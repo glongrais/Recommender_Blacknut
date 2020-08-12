@@ -46,7 +46,7 @@ public class ABStats {
     }
 
     public static HashMap<String, Double> clickrate(TableResult t) {
-        return null;
+        return new HashMap<>();
     }
 
     public static void ABTestStat(TableResult t) {
@@ -54,7 +54,7 @@ public class ABStats {
         HashMap<String, Double> click = clickrate(t);
         boolean nullHypothesis = chiSquare(click, 0.05);
 
-        String name = "ABTest";
+        String name = "ABTest.json";
         JSONArray algos = new JSONArray();
         JSONArray clickrate = new JSONArray();
 
