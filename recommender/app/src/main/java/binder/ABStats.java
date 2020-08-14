@@ -48,6 +48,7 @@ public class ABStats {
 
     // Parse the TableResult from the BigQuery request and return hashmap with the average clickrate for each algo from it ( HashMap<AlgoName, clickrate> )
     public static HashMap<String, Double> clickrate(TableResult t) {
+        // TODO Implementation of the function
         return new HashMap<>();
     }
 

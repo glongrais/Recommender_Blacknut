@@ -97,10 +97,10 @@ public class Evaluator {
 			if (line.hasOption("config")) {
 				cfgFileName = line.getOptionValue("config");
 			}
-			if(line.hasOption("check")){
+			if (line.hasOption("check")) {
 				checkMode = true;
 			}
-			if(line.hasOption("checkDate")){
+			if (line.hasOption("checkDate")) {
 				checkDate = format.parse(line.getOptionValue("checkDate"));
 			}
 		} catch (ParseException exp) {
@@ -112,6 +112,7 @@ public class Evaluator {
 		}
 
 		/* Load configuration file */
+
 		logger.info("Using {} as configuration file", cfgFileName);
 		Config cfg = null;
 		Yaml yaml = new Yaml();
@@ -123,7 +124,7 @@ public class Evaluator {
 			System.exit(1);
 		}
 
-		if(cfg.getNbUserPerFile() < 0){
+		if (cfg.getNbUserPerFile() < 0) {
 			logger.error("The number of users per file can't be negative");
 			System.exit(1);
 		}
@@ -131,13 +132,75 @@ public class Evaluator {
 		logger.info("=== MAIN CONFIGURATION ===");
 		cfg.logConfig(logger);
 
+		/* Read configuration files of all tests specified */
+
+		JSONParser jsonParser = new JSONParser();
+		JSONObject currentTest = null;
+		Boolean everyday_refresh = null;
+		Date today = null;
+
+		try (FileReader reader = new FileReader(cfg.getTestPath())) {
+
+			Object obj = jsonParser.parse(reader);
+
+			if (checkMode) {
+				today = checkDate;
+			} else {
+				today = new Date();
+			}
+			Date tmpDate = null;
+
+			String endDateString = (String) ((JSONObject) obj).get("end_date");
+			Date endDate = format.parse(endDateString);
+
+			if (today.after(endDate)) {
+				logger.error("Test period completed : {}", endDate);
+				System.exit(1);
+			}
+
+			JSONArray tests = (JSONArray) ((JSONObject) obj).get("tests");
+
+			for (Object test : tests) {
+				Date d = format.parse((String) ((JSONObject) test).get("start_date"));
+				if (tmpDate == null) {
+					tmpDate = d;
+					currentTest = (JSONObject) test;
+				}
+
+				if (d.compareTo(tmpDate) > 0 && d.compareTo(today) <= 0) {
+					tmpDate = d;
+					currentTest = (JSONObject) test;
+				}
+			}
+
+			if (tmpDate == null || tmpDate.after(today)) {
+				logger.error("No tests to do today : {}", today);
+				System.exit(1);
+			}
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (org.json.simple.parser.ParseException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (java.text.ParseException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
 		/* Load dataset */
 
 		logger.info("Loading dataset");
 
-		Grade g = null;;
+		Grade g = null;
+		;
 
 		ArrayList<String> games = new ArrayList<>();
+		ArrayList<String> users = new ArrayList<>();
 
 		if (cfg.getData().equals("online")) {
 
@@ -160,33 +223,65 @@ public class Evaluator {
 			QueryJobConfiguration queryConfigGames;
 			QueryJobConfiguration queryConfigClick;
 			QueryJobConfiguration queryConfigUsers;
-			
-			if(checkMode){
-				queryConfig = QueryJobConfiguration.newBuilder("SELECT * from external_share.streams limit 1")
-				.setUseLegacySql(false).build();
-				queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games limit 1")
-				.setUseLegacySql(false).build();
 
-				// TODO complete with the right query provided by Blacknut
-				queryConfigClick = QueryJobConfiguration.newBuilder("SELECT * from external_share.games limit 1")
-				.setUseLegacySql(false).build();
+			String streamQuery;
+			String gamesQuery;
+			String clickQuery;
+			String usersQuery;
+
+			if(currentTest.containsKey("streamQuery")){
+				streamQuery = (String) currentTest.get("streamQuery");
 			}else{
-				queryConfig = QueryJobConfiguration.newBuilder("SELECT * from external_share.streams")
-				.setUseLegacySql(false).build();
-				queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
-				.setUseLegacySql(false).build();
+				streamQuery = "SELECT * from external_share.streams";
+			}
 
+			if(currentTest.containsKey("gamesQuery")){
+				gamesQuery = (String) currentTest.get("gamesQuery");
+			}else{
+				gamesQuery = "SELECT * from external_share.games";
+			}
+
+			if(currentTest.containsKey("clickQuery")){
+				clickQuery = (String) currentTest.get("clickQuery");
+			}else{
 				// TODO complete with the right query provided by Blacknut
-				queryConfigClick = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
-				.setUseLegacySql(false).build();
+				clickQuery = "SELECT * from external_share.streams";
+			}
+
+			if(currentTest.containsKey("usersQuery")){
+				usersQuery = (String) currentTest.get("usersQuery");
+			}else{
+				usersQuery = "SELECT * from external_share.users";
+			}
+
+			if (checkMode) {
+				queryConfig = QueryJobConfiguration.newBuilder(streamQuery+" limit 1")
+						.setUseLegacySql(false).build();
+				queryConfigGames = QueryJobConfiguration.newBuilder(gamesQuery+" limit 1")
+						.setUseLegacySql(false).build();
+				queryConfigClick = QueryJobConfiguration.newBuilder(clickQuery+" limit 1")
+						.setUseLegacySql(false).build();
+				queryConfigUsers = QueryJobConfiguration.newBuilder(usersQuery+" limit 1")
+						.setUseLegacySql(false).build();
+			} else {
+				queryConfig = QueryJobConfiguration.newBuilder(streamQuery)
+						.setUseLegacySql(false).build();
+				queryConfigGames = QueryJobConfiguration.newBuilder(gamesQuery)
+						.setUseLegacySql(false).build();
+				queryConfigClick = QueryJobConfiguration.newBuilder(clickQuery)
+						.setUseLegacySql(false).build();
+				queryConfigUsers = QueryJobConfiguration.newBuilder(usersQuery)
+						.setUseLegacySql(false).build();
 			}
 
 			JobId jobId = JobId.of(UUID.randomUUID().toString());
 			JobId jobIdGames = JobId.of(UUID.randomUUID().toString());
 			JobId jobIdClick = JobId.of(UUID.randomUUID().toString());
+			JobId jobIdUsers = JobId.of(UUID.randomUUID().toString());
 			Job queryJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 			Job queryJobGames = bigquery.create(JobInfo.newBuilder(queryConfigGames).setJobId(jobIdGames).build());
 			Job queryJobClick = bigquery.create(JobInfo.newBuilder(queryConfigClick).setJobId(jobIdClick).build());
+			Job queryJobUsers = bigquery.create(JobInfo.newBuilder(queryConfigUsers).setJobId(jobIdUsers).build());
 
 			// Wait for the query to complete.
 
@@ -194,6 +289,7 @@ public class Evaluator {
 				queryJob = queryJob.waitFor();
 				queryJobGames = queryJobGames.waitFor();
 				queryJobClick = queryJobClick.waitFor();
+				queryJobUsers = queryJobUsers.waitFor();
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 				System.exit(1);
@@ -202,11 +298,13 @@ public class Evaluator {
 			TableResult result = null;
 			TableResult gamesTable = null;
 			TableResult clickTable = null;
+			TableResult usersTable = null;
 			try {
 
 				result = queryJob.getQueryResults();
 				gamesTable = queryJobGames.getQueryResults();
 				clickTable = queryJobClick.getQueryResults();
+				usersTable = queryJobUsers.getQueryResults();
 				g = new Grade(result);
 				ABStats.ABTestStat(clickTable);
 			} catch (JobException e1) {
@@ -219,6 +317,9 @@ public class Evaluator {
 
 			for (FieldValueList row : gamesTable.iterateAll()) {
 				games.add(row.get("global_id").getStringValue());
+			}
+			for (FieldValueList row : usersTable.iterateAll()) {
+				users.add(row.get("_id").getStringValue());
 			}
 		} else if (cfg.getData().equals("local")) {
 			g = new Grade(cfg.getDataset(), true);
@@ -297,68 +398,6 @@ public class Evaluator {
 			configs.put(s, c);
 		}
 
-		/* Read configuration files of all tests specified */
-
-		JSONParser jsonParser = new JSONParser();
-		JSONObject currentTest = null;
-		Boolean everyday_refresh = null;
-		Date today = null;
-         
-        try (FileReader reader = new FileReader(cfg.getTestPath()))
-        {
-            //Read JSON file
-			Object obj = jsonParser.parse(reader);
-
-			if(checkMode){
-				today = checkDate;
-			}else{
-				today = new Date();
-			}
-			Date tmpDate = null;
- 
-			String endDateString = (String) ((JSONObject)obj).get("end_date");
-			Date endDate = format.parse(endDateString);
-
-			if(today.after(endDate)){
-				logger.error("Test period completed : {}", endDate);
-				System.exit(1);
-			}
-
-			JSONArray tests = (JSONArray) ((JSONObject)obj).get("tests");
-
-			for(Object test : tests){
-				Date d = format.parse((String) ((JSONObject)test).get("start_date"));
-				if(tmpDate == null){
-					tmpDate = d;
-					currentTest = (JSONObject) test;
-				}
-
-				if(d.compareTo(tmpDate) > 0 && d.compareTo(today) <= 0){
-					tmpDate = d;
-					currentTest = (JSONObject) test;
-				}
-			}
-
-			if(tmpDate == null || tmpDate.after(today)){
-				logger.error("No tests to do today : {}", today);
-				System.exit(1);
-			}
-             
- 
-        } catch (FileNotFoundException e) {
-			e.printStackTrace();
-			System.exit(1);
-        } catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-        }  catch (org.json.simple.parser.ParseException e) {
-			e.printStackTrace();
-			System.exit(1);
-		} catch (java.text.ParseException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-
 		// Assigning algo to display to every users
 
 		everyday_refresh = (Boolean) currentTest.get("everyday_refresh");
@@ -366,33 +405,36 @@ public class Evaluator {
 		JSONArray algos = (JSONArray) currentTest.get("algos");
 		HashMap<String, Integer> algoUsers = new HashMap<>();
 
-		if(everyday_refresh){
+		if (everyday_refresh) {
 			Random rand = new Random();
-			
-			for(String user : g.getAllOldUserId()){
+
+			for (String user : g.getAllOldUserId()) {
 				int i = rand.nextInt(algos.size());
-				algoUsers.put(user, i);	
+				algoUsers.put(user, i);
 			}
-		}else{
+		} else {
 			try {
 				Date d = format.parse((String) ((JSONObject) currentTest).get("start_date"));
 
-				if(d.compareTo(today) == 0){
+				if (d.compareTo(today) == 0) {
 					Random rand = new Random();
-			
-					for(String user : g.getAllOldUserId()){
+
+					for (String user : g.getAllOldUserId()) {
 						int i = rand.nextInt(algos.size());
-						algoUsers.put(user, i);	
+						algoUsers.put(user, i);
 					}
-					setAlgoUsers(algoUsers, ((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json");
-				}else{
-					algoUsers = getAlgoUsers(((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json", g.getAllOldUserId(), algos.size());
+					setAlgoUsers(algoUsers,
+							((Long) currentTest.get("id")) + "_" + ((String) currentTest.get("start_date")) + ".json");
+				} else {
+					algoUsers = getAlgoUsers(
+							((Long) currentTest.get("id")) + "_" + ((String) currentTest.get("start_date")) + ".json",
+							g.getAllOldUserId(), algos.size());
 				}
 			} catch (java.text.ParseException e) {
 				System.exit(1);
 				e.printStackTrace();
 			}
-			
+
 		}
 
 		/* Recommendations */
@@ -400,7 +442,7 @@ public class Evaluator {
 		try {
 			logger.info("Starting recommendations");
 
-			JSONArray users = new JSONArray();
+			JSONArray usersJSON = new JSONArray();
 			FileWriter f;
 			LongPrimitiveIterator it_user = model.getUserIDs();
 			int numUser = model.getNumUsers();
@@ -413,26 +455,31 @@ public class Evaluator {
 
 			while (it_user.hasNext() && !checkMode) {
 				long id = it_user.next();
+				String idUser = g.getOldUserId((int) id);
+
+				if(!users.contains(idUser)){
+					continue;
+				}
 
 				if (cfg.getNbUserPerFile() > 0 && cfg.getNbUserPerFile() == index) {
 					String str = cfg.getResultPath();
 					f = new FileWriter(str.substring(0, str.length() - 5) + fileNb + "_" + nbFile + ".json");
-					f.write(users.toJSONString());
+					f.write(usersJSON.toJSONString());
 					f.flush();
 					f.close();
-					users = new JSONArray();
+					usersJSON = new JSONArray();
 					fileNb++;
 					index = 0;
 				}
 
 				JSONObject user = new JSONObject();
-				user.put("user_id", g.getOldUserId((int) id));
+				user.put("user_id", idUser);
 				Iterator<Entry<String, AbstractConfig>> it = configs.entrySet().iterator();
 				while (it.hasNext()) {
 					Entry<String, AbstractConfig> pair = it.next();
 					AbstractConfig c = (AbstractConfig) pair.getValue();
 					// c.logConfig(logcfg);
-					String name = pair.getKey();
+					String nameAlgo = pair.getKey();
 
 					RecommenderBuilder builder = new BinderRecommenderBuilder(c, 3.0f);
 					List<RecommendedItem> itemRecommendations = builder.buildRecommender(model).recommend(id,
@@ -445,13 +492,13 @@ public class Evaluator {
 						}
 					}
 
-					user.put(name, reco);
+					user.put(nameAlgo, reco);
 				}
 
-				user.put("display", algos.get(algoUsers.get(g.getOldUserId((int) id))));
+				user.put("display", algos.get(algoUsers.get(idUser)));
 
 				user.put("test_id", currentTest.get("id"));
-				users.add(user);
+				usersJSON.add(user);
 				index++;
 
 			}
@@ -463,7 +510,7 @@ public class Evaluator {
 				System.exit(1);
 				return;
 			}
-			f.write(users.toJSONString());
+			f.write(usersJSON.toJSONString());
 			f.flush();
 			f.close();
 
@@ -484,13 +531,13 @@ public class Evaluator {
 		JSONParser jsonParser = new JSONParser();
 
 		HashMap<String, Integer> result = new HashMap<>();
-		try (FileReader reader = new FileReader(s)){
+		try (FileReader reader = new FileReader(s)) {
 			Object obj = jsonParser.parse(reader);
-			
-			for(String user : users){
-				if(((JSONObject)obj).containsKey(user)){
-					result.put(user, (int)((JSONObject)obj).get(user));
-				}else{
+
+			for (String user : users) {
+				if (((JSONObject) obj).containsKey(user)) {
+					result.put(user, (int) ((JSONObject) obj).get(user));
+				} else {
 					Random rand = new Random();
 					int i = rand.nextInt(nbAlgos);
 					result.put(user, i);
