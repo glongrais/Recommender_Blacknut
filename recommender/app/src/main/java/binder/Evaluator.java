@@ -129,8 +129,10 @@ public class Evaluator {
 			System.exit(1);
 		}
 
-		logger.info("=== MAIN CONFIGURATION ===");
-		cfg.logConfig(logger);
+		if(!checkMode){
+			logger.info("=== MAIN CONFIGURATION ===");
+			cfg.logConfig(logger);
+		}
 
 		/* Read configuration files of all tests specified */
 
@@ -190,6 +192,9 @@ public class Evaluator {
 		} catch (java.text.ParseException e) {
 			e.printStackTrace();
 			System.exit(1);
+		}
+		if(checkMode){
+			logger.info("Current test : {}",currentTest.toString());
 		}
 
 		/* Load dataset */
@@ -400,7 +405,7 @@ public class Evaluator {
 
 		// Assigning algo to display to every users
 
-		everyday_refresh = (Boolean) currentTest.get("everyday_refresh");
+		everyday_refresh = (Boolean) currentTest.get("everydayRefresh");
 
 		JSONArray algos = (JSONArray) currentTest.get("algos");
 		HashMap<String, Integer> algoUsers = new HashMap<>();
@@ -440,7 +445,9 @@ public class Evaluator {
 		/* Recommendations */
 
 		try {
-			logger.info("Starting recommendations");
+			if(!checkMode){
+				logger.info("Starting recommendations");
+			}
 
 			JSONArray usersJSON = new JSONArray();
 			FileWriter f;
@@ -536,7 +543,7 @@ public class Evaluator {
 
 			for (String user : users) {
 				if (((JSONObject) obj).containsKey(user)) {
-					result.put(user, (int) ((JSONObject) obj).get(user));
+					result.put(user, (int)(long) ((JSONObject) obj).get(user));
 				} else {
 					Random rand = new Random();
 					int i = rand.nextInt(nbAlgos);
