@@ -229,8 +229,8 @@ public class Evaluator {
 			String clickQuery;
 			String usersQuery;
 
-			if(currentTest.containsKey("streamQuery")){
-				streamQuery = (String) currentTest.get("streamQuery");
+			if(currentTest.containsKey("streamsQuery")){
+				streamQuery = (String) currentTest.get("streamsQuery");
 			}else{
 				streamQuery = "SELECT * from external_share.streams";
 			}
@@ -306,7 +306,7 @@ public class Evaluator {
 				clickTable = queryJobClick.getQueryResults();
 				usersTable = queryJobUsers.getQueryResults();
 				g = new Grade(result);
-				ABStats.ABTestStat(clickTable);
+				ABStats.ABTestStat(clickTable, cfg.getABPath());
 			} catch (JobException e1) {
 				e1.printStackTrace();
 				System.exit(1);

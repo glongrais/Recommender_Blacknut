@@ -53,12 +53,11 @@ public class ABStats {
     }
 
     // The main function to call for the ABStat with the TableResult from the BigQuery request in parameters
-    public static void ABTestStat(TableResult t) {
+    public static void ABTestStat(TableResult t, String name) {
 
         HashMap<String, Double> click = clickrate(t);
         boolean nullHypothesis = chiSquare(click, 0.05);
 
-        String name = "ABTest.json";
         JSONArray algos = new JSONArray();
         JSONArray clickrate = new JSONArray();
 
@@ -67,6 +66,7 @@ public class ABStats {
             algos.add(algo);
             JSONObject tmp = new JSONObject();
             tmp.put(algo, click.get(algo));
+            clickrate.add(tmp);
         }
 
         JSONObject result = new JSONObject();

@@ -26,6 +26,7 @@ public class Config implements AbstractConfig {
 	private String resultPath;
 	private String keyPath;
 	private String testPath;
+	private String ABPath;
 	private int nbUserPerFile;
 	private int nbRecommendation;
 	private List<String> configs;
@@ -63,6 +64,14 @@ public class Config implements AbstractConfig {
 
 	public String getTestPath() {
 		return this.testPath;
+	}
+
+	public void setABPath(String s) {
+		this.ABPath = s;
+	}
+
+	public String getABPath() {
+		return this.ABPath;
 	}
 
 	public void setNbUserPerFile(int n) {
