@@ -27,6 +27,7 @@ import org.json.simple.JSONObject;
 
 public class ABStats {
 
+    // Compute to chi-square test, return true if algos are independents, false in the other case
     public static boolean chiSquare(HashMap<String, Double> algos, double significance) {
         double mean = 0.0, dist = 0.0;
 
@@ -45,10 +46,12 @@ public class ABStats {
         return prob < significance;
     }
 
+    // Parse the TableResult from the BigQuery request and return hashmap with the average clickrate for each algo from it ( HashMap<AlgoName, clickrate> )
     public static HashMap<String, Double> clickrate(TableResult t) {
         return new HashMap<>();
     }
 
+    // The main function to call for the ABStat with the TableResult from the BigQuery request in parameters
     public static void ABTestStat(TableResult t) {
 
         HashMap<String, Double> click = clickrate(t);

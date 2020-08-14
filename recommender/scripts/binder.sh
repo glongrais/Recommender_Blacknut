@@ -10,7 +10,7 @@ function execute_command() {
       ;;
     check)
       echo "Running..."
-      (cd $eval_dir && ./check.sh)
+      (cd $eval_dir && ./check.sh $2 $3)
       ;;
     compile)
       echo "Compiling..."
@@ -41,6 +41,4 @@ if [ $# -eq 0 ]
     display_usage
 fi
 
-for arg in $@; do
-  execute_command $arg
-done
+execute_command $1 $2 $3

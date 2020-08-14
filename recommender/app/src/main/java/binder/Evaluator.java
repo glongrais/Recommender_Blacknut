@@ -80,14 +80,18 @@ public class Evaluator {
 
 	public static void main(String[] args) throws IOException {
 
+		DateFormat format = new SimpleDateFormat("dd_MM_yyyy");
+
 		String cfgFileName = prefix + "default_config.yml";
 		Boolean checkMode = false;
+		Date checkDate = null;
 
 		/* Check command line arguments */
 		CommandLineParser parser = new DefaultParser();
 		Options options = new Options();
 		options.addOption("c", "config", true, "Path of config file, otherwise default used");
 		options.addOption("ch", "check", false, "Run the app in check mode without the recommendations");
+		options.addOption("chd", "checkDate", true, "Change this actual date");
 		try {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("config")) {
@@ -96,8 +100,14 @@ public class Evaluator {
 			if(line.hasOption("check")){
 				checkMode = true;
 			}
+			if(line.hasOption("checkDate")){
+				checkDate = format.parse(line.getOptionValue("checkDate"));
+			}
 		} catch (ParseException exp) {
 			exp.printStackTrace();
+			System.exit(1);
+		} catch (java.text.ParseException e) {
+			e.printStackTrace();
 			System.exit(1);
 		}
 
@@ -146,12 +156,30 @@ public class Evaluator {
 			BigQuery bigquery = BigQueryOptions.newBuilder().setCredentials(credentials).setProjectId(projectId).build()
 					.getService();
 
-			QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder("SELECT * from external_share.streams")
-					.setUseLegacySql(false).build();
-			QueryJobConfiguration queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
-					.setUseLegacySql(false).build();
-					QueryJobConfiguration queryConfigClick = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
-					.setUseLegacySql(false).build();
+			QueryJobConfiguration queryConfig;
+			QueryJobConfiguration queryConfigGames;
+			QueryJobConfiguration queryConfigClick;
+			QueryJobConfiguration queryConfigUsers;
+			
+			if(checkMode){
+				queryConfig = QueryJobConfiguration.newBuilder("SELECT * from external_share.streams limit 1")
+				.setUseLegacySql(false).build();
+				queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games limit 1")
+				.setUseLegacySql(false).build();
+
+				// TODO complete with the right query provided by Blacknut
+				queryConfigClick = QueryJobConfiguration.newBuilder("SELECT * from external_share.games limit 1")
+				.setUseLegacySql(false).build();
+			}else{
+				queryConfig = QueryJobConfiguration.newBuilder("SELECT * from external_share.streams")
+				.setUseLegacySql(false).build();
+				queryConfigGames = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
+				.setUseLegacySql(false).build();
+
+				// TODO complete with the right query provided by Blacknut
+				queryConfigClick = QueryJobConfiguration.newBuilder("SELECT * from external_share.games")
+				.setUseLegacySql(false).build();
+			}
 
 			JobId jobId = JobId.of(UUID.randomUUID().toString());
 			JobId jobIdGames = JobId.of(UUID.randomUUID().toString());
@@ -274,14 +302,18 @@ public class Evaluator {
 		JSONParser jsonParser = new JSONParser();
 		JSONObject currentTest = null;
 		Boolean everyday_refresh = null;
+		Date today = null;
          
         try (FileReader reader = new FileReader(cfg.getTestPath()))
         {
             //Read JSON file
 			Object obj = jsonParser.parse(reader);
-			DateFormat format = new SimpleDateFormat("dd_MM_yyyy");
 
-			Date today = new Date();
+			if(checkMode){
+				today = checkDate;
+			}else{
+				today = new Date();
+			}
 			Date tmpDate = null;
  
 			String endDateString = (String) ((JSONObject)obj).get("end_date");
@@ -341,9 +373,26 @@ public class Evaluator {
 				int i = rand.nextInt(algos.size());
 				algoUsers.put(user, i);	
 			}
-			setAlgoUsers(algoUsers, ((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json");
 		}else{
-			algoUsers = getAlgoUsers(((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json", g.getAllOldUserId(), algos.size());
+			try {
+				Date d = format.parse((String) ((JSONObject) currentTest).get("start_date"));
+
+				if(d.compareTo(today) == 0){
+					Random rand = new Random();
+			
+					for(String user : g.getAllOldUserId()){
+						int i = rand.nextInt(algos.size());
+						algoUsers.put(user, i);	
+					}
+					setAlgoUsers(algoUsers, ((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json");
+				}else{
+					algoUsers = getAlgoUsers(((Long)currentTest.get("id"))+"_"+((String)currentTest.get("start_date"))+".json", g.getAllOldUserId(), algos.size());
+				}
+			} catch (java.text.ParseException e) {
+				System.exit(1);
+				e.printStackTrace();
+			}
+			
 		}
 
 		/* Recommendations */
